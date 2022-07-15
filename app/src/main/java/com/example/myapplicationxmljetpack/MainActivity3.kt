@@ -115,22 +115,26 @@ class MainActivity3 : ComponentActivity() {
 
         val photoName= "photo"+System.currentTimeMillis()
         val photoFolder="InspectionApp"
-
         val value = ContentValues()
-        value.put(MediaStore.Images.Media.DISPLAY_NAME, photoName)
-
-
-        val uri = if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.Q){
-            MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-
+        //para detectar la version y establecer los metodos de acceso a la carpeta Pictures
+// ya que es diferente la forma de acceder en las diferentes versiones
+        val uri:Uri?
+        if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.Q){
+            uri=MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+            value.put(MediaStore.Images.Media.DISPLAY_NAME, photoName)
+            value.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/$photoFolder/")
         }else{
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+            uri=MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+            @Suppress("DEPRECATION")
+            val pictures=Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).path
+                with(File("$pictures/$photoFolder/$photoName.jpg")) {
+                    @Suppress("DEPRECATION")
+                    value.put(MediaStore.MediaColumns.DATA, path)
+                    parentFile!!.mkdir()
+                    createNewFile()
+                }
         }
 
-
-
-
-        value.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/$photoFolder/")
         val finalUri=contentResolver.insert(uri,value)
         uriFromCam=finalUri
         val cameraIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
